@@ -13,7 +13,7 @@ import eazy
 import jwst
 import csv
 filters=('f115w','f150w','f200w','f277w','f356w','f444w')
-home_dir='/home/AstroPhysics-Shared/Sharma/JWST/CEERS/'
+home_dir='/home/rs2755/JWST/CEERS/'
 
 
 
@@ -76,7 +76,7 @@ data=np.log(seg_img[0].data)
 ax.imshow(data,cmap='viridis')
 for pos in range(len(test_Xval)):
     print(pos,test_Xval[pos],test_Yval[pos])
-    ellipse=Ellipse(xy=(test_Xval[pos],test_Yval[pos]),width=test_file['A_IMAGE'][pos],height=test_file['B_IMAGE'][pos],angle=test_file['THETA_IMAGE'][pos],color='white',ls='--'fill=False)
+    ellipse=Ellipse(xy=(test_Xval[pos],test_Yval[pos]),width=test_file['A_IMAGE'][pos],height=test_file['B_IMAGE'][pos],angle=test_file['THETA_IMAGE'][pos],color='k',ls='--',fill=False)
     ax.add_patch(ellipse)
 plt.show()
 '''
