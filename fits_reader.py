@@ -54,7 +54,7 @@ for hdu in range(len(fitsfile)):
         print(hdu,head,fitsfile[hdu].header[head])
 '''
 '''
-sew = sewpy.SEW(workdir=home_dir,params=["NUMBER","X_IMAGE", "Y_IMAGE", "FLUX_APER","THETA_IMAGE","A_IMAGE","B_IMAGE","FLAGS"],config={"DETECT_MINAREA":100, "PHOT_APERTURES":"100","PIXEL_SCALE":0.015},sexpath="sex")
+sew = sewpy.SEW(workdir=home_dir,params=["NUMBER","X_IMAGE", "Y_IMAGE", "FLUX_APER","THETA_IMAGE","A_IMAGE","B_IMAGE","FLAGS"],config={"DETECT_MINAREA":5, "PHOT_APERTURES":"100","PIXEL_SCALE":0.015},sexpath="sex")
 filename=home_dir+'hlsp_candels_hst_acs_egs-tot-30mas-section11_f606w_v1.0_drz.fits'
 fits.info(filename)
 fitsfile=fits.open(filename)
@@ -64,21 +64,20 @@ plt.imshow(np.log(data),cmap='viridis')
 plt.show()
 sew(home_dir+'hlsp_candels_hst_acs_egs-tot-30mas-section11_f606w_v1.0_drz.fits')
 '''
+#view image of source extracted files
 test_filename=home_dir+'hlsp_candels_hst_acs_egs-tot-30mas-section11_f606w_v1.0_drz.cat.txt'
 test_file=ascii.read(test_filename)
 test_Xval=test_file['X_IMAGE']
 test_Yval=test_file['Y_IMAGE']
 print('N of OBJECTS',len(test_Xval))
-fig,ax=plt.subplots(nrows=2,ncols=1)
+fig,ax=plt.subplots()
 seg_img=fits.open(home_dir+'hlsp_candels_hst_acs_egs-tot-30mas-section11_f606w_v1.0_drz.fits')
 data=np.log(seg_img[0].data)
-empty_img=np.zeros(data.shape)
-ax[0].imshow(empty_img)
+ax.imshow(data,cmap='viridis')
 for pos in range(len(test_Xval)):
     print(pos,test_Xval[pos],test_Yval[pos])
-    ellipse=Ellipse(xy=(test_Xval[pos],test_Yval[pos]),width=test_file['A_IMAGE'][pos],height=test_file['B_IMAGE'][pos],angle=test_file['THETA_IMAGE'][pos],color='blue',fill=True)
-    ax[0].add_patch(ellipse)
-ax[1].imshow(data,cmap='viridis')
+    ellipse=Ellipse(xy=(test_Xval[pos],test_Yval[pos]),width=test_file['A_IMAGE'][pos],height=test_file['B_IMAGE'][pos],angle=test_file['THETA_IMAGE'][pos],color='white',ls='--'fill=False)
+    ax.add_patch(ellipse)
 plt.show()
 '''
 fig,ax_list=plt.subplots(nrows=3,ncols=2,figsize=(12,8))
@@ -148,10 +147,10 @@ for pos in range(len(test_Xval)):
 ax[1].imshow(data,cmap='viridis')
 plt.show()
 '''
-
+'''
 filename=ascii.read(home_dir+'ceers5_'+filters[1]+'.cat.ecsv')
 print(filename)
-
+'''
 '''
 fits.info(home_dir+'ceers5_'+filters[1]+'_segm.fits')
 '''
