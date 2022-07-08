@@ -1,4 +1,5 @@
 import sys
+import subprocess
 import numpy as np
 import os
 import illustris_python as il
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Ellipse
 from astropy.io import fits,ascii
 from astropy.io.fits import getdata,getheader
+from astropy.wcs import WCS
 import pandas as pd
 import sewpy
 import eazy
@@ -21,6 +23,12 @@ def show_fits(fits_filename):
     '''opens fits files and spits out info. Have to define ext first but default is 0. Returns headers and data in ext as well as the open file to manipulate with file[0].header[head]'''   
     #hdul=fits.open(fits_filename)
     fits.info(fits_filename)
+    fitsfile=fits.open(fits_filename)
+    for hdu in range(len(fitsfile)):
+        hdul=(fitsfile[hdu])
+        headers=fitsfile[hdul].header
+        for head in headers:
+            print(hdu,head,fitsfile[hdu].header[head])
     #fits contain .headers and .data. Headers are 80 byts and contain  a keyword(str) value(any type) comment(str). Select header details as header object is dict. hdrs['SCI'].  Access directly with .header method or create hdr object
 
 #get value of header keywords 
@@ -64,6 +72,7 @@ plt.imshow(np.log(data),cmap='viridis')
 plt.show()
 sew(home_dir+'hlsp_candels_hst_acs_egs-tot-30mas-section11_f606w_v1.0_drz.fits')
 '''
+'''
 #view image of source extracted files
 test_filename=home_dir+'hlsp_candels_hst_acs_egs-tot-30mas-section11_f606w_v1.0_drz.cat.txt'
 test_file=ascii.read(test_filename)
@@ -79,6 +88,8 @@ for pos in range(len(test_Xval)):
     ellipse=Ellipse(xy=(test_Xval[pos],test_Yval[pos]),width=test_file['A_IMAGE'][pos],height=test_file['B_IMAGE'][pos],angle=test_file['THETA_IMAGE'][pos],color='k',ls='--',fill=False)
     ax.add_patch(ellipse)
 plt.show()
+'''
+
 '''
 fig,ax_list=plt.subplots(nrows=3,ncols=2,figsize=(12,8))
 for i,ax in enumerate(ax_list.ravel()):
@@ -113,6 +124,7 @@ for i in range(3,6):
 '''   
 
 '''
+#ascii.read makes a qtable. Access columns with .columns method. 
 true_filename=home_dir+'ceers5_'+filters[1]+'_cat.ecsv'
 test_filename=home_dir+'ceers5_'+filters[1]+'_i2d.cat.txt'
 true_file=ascii.read(true_filename)
@@ -154,3 +166,41 @@ print(filename)
 '''
 fits.info(home_dir+'ceers5_'+filters[1]+'_segm.fits')
 '''
+
+#result=subprocess.run(["/home/rs2755/JWST/CEERS/galfitm-1.4.4-linux-x86_64.1","-c"],input="/home/rs2755/JWST/Galfit/ngcexamplesersic.txt",capture_output=True,text=True, timeout=10,check=True)
+#print('result is',result.stdout)
+#take source extractor output and then use that to identify sources and take 200 by 200 cutouts around the source. 
+
+true_filename=home_dir+'ceers5_'+filters[1]+'_i2d.cat.txt'
+SAM_cat=ascii.read(home_dir+"CEERS_SAM_input.cat")
+print(SAM_cat.columns)
+true_file=ascii.read(true_filename)
+print(true_file.columns)
+#true_R=(true_file['xcentroid']**2+true_file['ycentroid']**2)**0.5
+fig,ax=plt.subplots()
+print(len(true_file['X_IMAGE']))
+filename=home_dir+'ceers5_'+filters[1]+'_i2d.fits'
+image=fits.open(filename)
+data=image['SCI'].data
+header=fits.getheader(filename,ext=1)
+#access the ra, dec from x and y pixel coordinate
+wcs=WCS(header=header)
+print('shape is',data.shape)
+for obj in range(len(true_file['X_IMAGE'])):
+    xpix=int(true_file['X_IMAGE'][obj])
+    ypix=int(true_file['Y_IMAGE'][obj])
+    print("coords",xpix,ypix)
+    coord=wcs.all_pix2world(xpix,ypix,1)
+    print('real coords are',coord)
+    #print('label',true_file['label'][obj])
+    test_img=np.zeros((200,200))
+    for x in range(0,200):
+        for y in range(0,200):
+            #print(x,y)
+            test_img[y,x]=data[ypix-100+y,xpix-100+x]
+    plt.imshow(test_img,cmap='viridis')
+    plt.show()
+
+
+#show_fits(home_dir+'ceers5_'+filters[1]+'_i2d.fits')
+
