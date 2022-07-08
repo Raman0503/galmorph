@@ -1,5 +1,5 @@
 #########################################################################
-The scripts in this folder  are based on code written by Junkai, Stign and Raman. A functional structure rather than object orientated approach is taken. No classes are generated or used. Standard Python libraries as well as Astropy,Numpy,Astrodendro,photutils,Pandas are used
+The scripts in this folder  are based on code written by Junkai Zhang, Dr Stijn Wuyts and Raman Sharma. A functional structure rather than object orientated approach is taken. No classes are generated or used. Standard Python libraries as well as Astropy,Numpy,Astrodendro,photutils,Pandas are used
 
 Only the following 3 scripts are needed for the time being
 
