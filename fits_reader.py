@@ -14,6 +14,7 @@ import sewpy
 import eazy
 import jwst
 import csv
+import deepdish as dd
 filters=('f115w','f150w','f200w','f277w','f356w','f444w')
 home_dir='/home/rs2755/JWST/CEERS/'
 
@@ -171,36 +172,42 @@ fits.info(home_dir+'ceers5_'+filters[1]+'_segm.fits')
 #print('result is',result.stdout)
 #take source extractor output and then use that to identify sources and take 200 by 200 cutouts around the source. 
 
-true_filename=home_dir+'ceers5_'+filters[1]+'_i2d.cat.txt'
-SAM_cat=ascii.read(home_dir+"CEERS_SAM_input.cat")
-print(SAM_cat.columns)
-true_file=ascii.read(true_filename)
-print(true_file.columns)
-#true_R=(true_file['xcentroid']**2+true_file['ycentroid']**2)**0.5
-fig,ax=plt.subplots()
-print(len(true_file['X_IMAGE']))
-filename=home_dir+'ceers5_'+filters[1]+'_i2d.fits'
-image=fits.open(filename)
-data=image['SCI'].data
-header=fits.getheader(filename,ext=1)
-#access the ra, dec from x and y pixel coordinate
-wcs=WCS(header=header)
 print('shape is',data.shape)
-for obj in range(len(true_file['X_IMAGE'])):
-    xpix=int(true_file['X_IMAGE'][obj])
-    ypix=int(true_file['Y_IMAGE'][obj])
-    print("coords",xpix,ypix)
-    coord=wcs.all_pix2world(xpix,ypix,1)
-    print('real coords are',coord)
-    #print('label',true_file['label'][obj])
-    test_img=np.zeros((200,200))
-    for x in range(0,200):
-        for y in range(0,200):
-            #print(x,y)
-            test_img[y,x]=data[ypix-100+y,xpix-100+x]
+coord_dict={}
+for i,filter_name in enumerate(filters):
+    all_coords=np.array([])
+    true_filename=home_dir+'ceers5_'+filters[i]+'_i2d.cat.txt'
+    SAM_cat=ascii.read(home_dir+"CEERS_SAM_input.cat")
+    print(SAM_cat.columns)
+    true_file=ascii.read(true_filename)
+    print(true_file.columns)
+    #true_R=(true_file['xcentroid']**2+true_file['ycentroid']**2)**0.5
+    fig,ax=plt.subplots()
+    print(len(true_file['X_IMAGE']))
+    filename=home_dir+'ceers5_'+filters[i]+'_i2d.fits'
+    image=fits.open(filename)
+    data=image['SCI'].data
+    header=fits.getheader(filename,ext=1)
+    #access the ra, dec from x and y pixel coordinate
+    wcs=WCS(header=header)
+    for obj in range(0,10)#len(true_file['X_IMAGE'])):
+        xpix=int(true_file['X_IMAGE'][obj])
+        ypix=int(true_file['Y_IMAGE'][obj])
+        print("coords",xpix,ypix)
+        coord=wcs.all_pix2world(xpix,ypix,1)
+        print('real coords are',coord)
+        all_coords=np.append(all_coords,coord)
+        #print('label',true_file['label'][obj])
+        test_img=np.zeros((200,200))
+        for x in range(0,200):
+            for y in range(0,200):
+                #print(x,y)
+                test_img[y,x]=data[ypix-100+y,xpix-100+x]
+    coord_dict.update({filter_name:all_coords})
     plt.imshow(test_img,cmap='viridis')
-    plt.show()
-
+    fig.savefig("ceers_cutout_"+obj+filter_name,format='png')
+    #plt.show()
+dd.io.save('all_cutout_coords.h5',coord_dict)
 
 #show_fits(home_dir+'ceers5_'+filters[1]+'_i2d.fits')
 
