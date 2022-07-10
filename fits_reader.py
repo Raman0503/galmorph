@@ -190,7 +190,7 @@ for i,filter_name in enumerate(filters):
     header=fits.getheader(filename,ext=1)
     #access the ra, dec from x and y pixel coordinate
     wcs=WCS(header=header)
-    for obj in range(0,10)#len(true_file['X_IMAGE'])):
+    for obj in range(0,10):#len(true_file['X_IMAGE'])):
         xpix=int(true_file['X_IMAGE'][obj])
         ypix=int(true_file['Y_IMAGE'][obj])
         print("coords",xpix,ypix)
