@@ -220,10 +220,12 @@ for i,filter_name in enumerate(filters):
 
 
 #open fits image
-image=fits.open(home_dir+'ceers_'+filters[1]+'0.fits')
-data=image[0].data
-fig,ax=plt.subplots()
-plt.imshow(data)
+fig,ax_list=plt.subplots(nrows=3,ncols=2)
+for i,ax in enumerate(ax_list.ravel()):
+    show_fits(home_dir+'ceers_'+filters[i]+'5.fits')
+    image=fits.open(home_dir+'ceers_'+filters[i]+'5.fits')
+    data=image[1].data
+    ax.imshow(data,cmap='viridis')
 plt.show()
 
 '''
@@ -237,7 +239,7 @@ for i,filter in enumerate(filters):
 '''   
 '''
 #print(coord)
-#take source extractor output from 1 filter  and then use that to identify same sources in all other filters and take 200 by 200 cutouts around the source.Turn them into a h5 file for coords and fits files for each object.
+#take source extractor output (pixel coords of centroid only) from 1 filter of mosaic  and then use that to identify same sources in all other filters and take 200 by 200 cutouts around the source.Turn them into a h5 for coords(ra,dec) and fits files for each object.
 #print('shape is',data.shape)
 coords_f115w_dict={}
 all_coords=np.array([])
@@ -273,7 +275,7 @@ for obj in range(0,10):#len(true_file['X_IMAGE'])):
 all_coords=np.reshape(all_coords,(10,2))
 coords_f115w_dict.update({filters[0]:all_coords})
 dd.io.save('f115_coords.h5',coords_f115w_dict)
-for i in range(1,5):
+for i in range(1,6):
     filename=home_dir+'ceers5_'+filters[i]+'_i2d.fits'
     header=fits.getheader(filename,ext=1)
     #access the ra, dec from x and y pixel coordinate
