@@ -36,11 +36,13 @@ def show_fits(fits_filename):
     
     
 
-#make a fits with primary headerr and 1 data image. Can append to this using hdul.append(fits.ImageHDU_2(data2))
-def make_fits(data,hdr,filename):
-    hdu=fits.PrimaryHDU(header=hdr)
-    image_hdu=fits.ImageHDU(data)
-    hdul=fits.HDUlists([hdu,image_hdu])
+#make a fits with primary headerr and 1 data image. Comment must eb a string. Can append to this using hdul.append(fits.ImageHDU_2(data2))
+def make_fits(data,comment,filename):
+    hdr=fits.Header()#create header object
+    hdr['COMMENT']=comment
+    empty_primary=fits.PrimaryHDU(header=hdr)
+    image_hdu=fits.ImageHDU(data)#create image hdu
+    hdul=fits.HDUList([empty_primary,image_hdu])
     hdul.writeto(filename)
     return(hdul)
 
@@ -170,10 +172,10 @@ fits.info(home_dir+'ceers5_'+filters[1]+'_segm.fits')
 
 #result=subprocess.run(["/home/rs2755/JWST/CEERS/galfitm-1.4.4-linux-x86_64.1","-c"],input="/home/rs2755/JWST/Galfit/ngcexamplesersic.txt",capture_output=True,text=True, timeout=10,check=True)
 #print('result is',result.stdout)
-#take source extractor output and then use that to identify sources and take 200 by 200 cutouts around the source. 
-
-print('shape is',data.shape)
-coord_dict={}
+#take source extractor output and then use that to identify sources and take 200 by 200 cutouts around the source.Turn them into a h5 file for coords and fits files for each object. Each obj number may refer to a different obj however. Need to rewrite to produce the same object fro each object number.    
+'''
+#print('shape is',data.shape)
+#cutout_dict={}
 for i,filter_name in enumerate(filters):
     all_coords=np.array([])
     true_filename=home_dir+'ceers5_'+filters[i]+'_i2d.cat.txt'
@@ -202,12 +204,103 @@ for i,filter_name in enumerate(filters):
         for x in range(0,200):
             for y in range(0,200):
                 #print(x,y)
-                test_img[y,x]=data[ypix-100+y,xpix-100+x]
-    coord_dict.update({filter_name:all_coords})
-    plt.imshow(test_img,cmap='viridis')
-    fig.savefig("ceers_cutout_"+obj+filter_name,format='png')
+                try:
+                    test_img[y,x]=data[ypix-100+y,xpix-100+x]
+                except IndexError:
+                    continue
+        make_fits(test_img,'This is cutout from ceers 5 '+filter_name+str(obj),"ceers_"+filter_name+str(obj)+".fits")
+        #cutout_dict.update({filter_name:all_coords})
+        #cutout_dict.update({filter_name+str(obj):test_img})
+        #plt.imshow(test_img,cmap='viridis')
+        #fig.savefig("ceers_cutout_"+str(obj)+filter_name,format='png')
+        print(str(obj),filter_name,'saved')
     #plt.show()
-dd.io.save('all_cutout_coords.h5',coord_dict)
+#dd.io.save('all_cutouts.h5',cutout_dict)
+'''
 
-#show_fits(home_dir+'ceers5_'+filters[1]+'_i2d.fits')
 
+#open fits image
+image=fits.open(home_dir+'ceers_'+filters[1]+'0.fits')
+data=image[0].data
+fig,ax=plt.subplots()
+plt.imshow(data)
+plt.show()
+
+'''
+all_coords=dd.io.load('all_cutouts.h5')
+print(all_coords.keys())
+for i,filter in enumerate(filters):
+    coord=all_coords[filter]
+    coord=np.reshape(coord,(10,2))
+    coord=np.sort(coord,0)
+    print(coord)
+'''   
+'''
+#print(coord)
+#take source extractor output from 1 filter  and then use that to identify same sources in all other filters and take 200 by 200 cutouts around the source.Turn them into a h5 file for coords and fits files for each object.
+#print('shape is',data.shape)
+coords_f115w_dict={}
+all_coords=np.array([])
+true_filename=home_dir+'ceers5_'+filters[0]+'_i2d.cat.txt'
+SAM_cat=ascii.read(home_dir+"CEERS_SAM_input.cat")
+print(SAM_cat.columns)
+true_file=ascii.read(true_filename)
+print(true_file.columns)
+#true_R=(true_file['xcentroid']**2+true_file['ycentroid']**2)**0.5
+filename=home_dir+'ceers5_'+filters[0]+'_i2d.fits'
+image=fits.open(filename)
+data=image['SCI'].data
+header=fits.getheader(filename,ext=1)
+#access the ra, dec from x and y pixel coordinate
+wcs=WCS(header=header)
+for obj in range(0,10):#len(true_file['X_IMAGE'])):
+    xpix=int(true_file['X_IMAGE'][obj])
+    ypix=int(true_file['Y_IMAGE'][obj])
+    print("coords",xpix,ypix)
+    coord=wcs.all_pix2world(xpix,ypix,1)
+    print('real coords are',coord)
+    all_coords=np.append(all_coords,coord)
+    #print('label',true_file['label'][obj])
+    test_img=np.zeros((200,200))
+    for x in range(0,200):
+        for y in range(0,200):
+            #print(x,y)
+            try:
+                test_img[y,x]=data[ypix-100+y,xpix-100+x]
+            except IndexError:
+                continue
+    make_fits(test_img,'This is cutout from ceers 5 '+filters[0]+str(obj),'ceers_'+filters[0]+str(obj)+'.fits')
+all_coords=np.reshape(all_coords,(10,2))
+coords_f115w_dict.update({filters[0]:all_coords})
+dd.io.save('f115_coords.h5',coords_f115w_dict)
+for i in range(1,5):
+    filename=home_dir+'ceers5_'+filters[i]+'_i2d.fits'
+    header=fits.getheader(filename,ext=1)
+    #access the ra, dec from x and y pixel coordinate
+    wcs=WCS(header=header)
+    image=fits.open(filename)
+    data=image['SCI'].data
+    for j,coords in enumerate(all_coords):#len(true_file['X_IMAGE'])):
+        print('checking coords',coords)
+        #translate world coords into pix coords
+        xpix=int(wcs.all_world2pix(coords[0],coords[1],1)[0])
+        ypix=int(wcs.all_world2pix(coords[0],coords[1],1)[1])
+        print("coords",xpix,ypix)
+        #print('label',true_file['label'][obj])
+        test_img=np.zeros((200,200))
+        for x in range(0,200):
+            for y in range(0,200):
+                #print(x,y)
+                try:
+                    test_img[y,x]=data[ypix-100+y,xpix-100+x]
+                except IndexError:
+                    continue
+        make_fits(test_img,'This is cutout from ceers 5 '+filters[i]+str(j),"ceers_"+filters[i]+str(j)+".fits")
+        #cutout_dict.update({filter_name:all_coords})
+        #cutout_dict.update({filter_name+str(obj):test_img})
+        #plt.imshow(test_img,cmap='viridis')
+        #fig.savefig("ceers_cutout_"+str(obj)+filter_name,format='png')
+        print(str(j),filters[i],'saved')
+    #plt.show()
+#dd.io.save('all_cutouts.h5',cutout_dict)
+'''
